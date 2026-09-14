@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+models/*.joblib
+data/processed/
+reports/run-*.log
+reports/pipeline.log
+reports/metrics_history.jsonl
