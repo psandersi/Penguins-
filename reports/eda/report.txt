@@ -1,0 +1,119 @@
+PALMER PENGUINS — ИССЛЕДОВАНИЕ ДО ПРЕПРОЦЕССИНГА
+Источник: C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\data\raw\penguins.csv
+Размер: 344 строк, 8 столбцов.
+
+1. ПЕРВЫЕ СТРОКИ
+species    island  bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g    sex  year
+ Adelie Torgersen            39.1           18.7              181.0       3750.0   male  2007
+ Adelie Torgersen            39.5           17.4              186.0       3800.0 female  2007
+ Adelie Torgersen            40.3           18.0              195.0       3250.0 female  2007
+ Adelie Torgersen             NaN            NaN                NaN          NaN    NaN  2007
+ Adelie Torgersen            36.7           19.3              193.0       3450.0 female  2007
+
+2. СТОЛБЦЫ, ТИПЫ И ПРОПУСКИ
+                      type  non_null  unique  missing  missing_percent
+species             object       344       3        0             0.00
+island              object       344       3        0             0.00
+bill_length_mm     float64       342     164        2             0.58
+bill_depth_mm      float64       342      80        2             0.58
+flipper_length_mm  float64       342      55        2             0.58
+body_mass_g        float64       342      94        2             0.58
+sex                 object       333       2       11             3.20
+year                 int64       344       3        0             0.00
+Полных дубликатов: 0.
+Строк с пропусками в выбранных признаках: 2.
+Строк без целевого вида: 0.
+
+3. ВИДЫ И БАЛАНС КЛАССОВ
+           count  percent_of_labeled
+species                             
+Adelie       152               44.19
+Gentoo       124               36.05
+Chinstrap     68               19.77
+
+Виды по островам:
+species    Adelie  Chinstrap  Gentoo
+island                              
+Biscoe         44          0     124
+Dream          56         68       0
+Torgersen      52          0       0
+
+Виды по полу (включая пропуски):
+species  Adelie  Chinstrap  Gentoo
+sex                               
+Missing       6          0       5
+female       73         34      58
+male         73         34      61
+
+Виды по годам:
+species  Adelie  Chinstrap  Gentoo
+year                              
+2007         50         26      34
+2008         50         18      46
+2009         52         24      44
+
+4. ЧИСЛОВЫЕ ПРИЗНАКИ
+       bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g
+count          342.00         342.00             342.00       342.00
+mean            43.92          17.15             200.92      4201.75
+std              5.46           1.97              14.06       801.95
+min             32.10          13.10             172.00      2700.00
+25%             39.22          15.60             190.00      3550.00
+50%             44.45          17.30             197.00      4050.00
+75%             48.50          18.70             213.00      4750.00
+max             59.60          21.50             231.00      6300.00
+
+Средние, медианы и диапазоны по видам:
+species                    Adelie  Chinstrap   Gentoo
+bill_length_mm    mean      38.79      48.83    47.50
+                  median    38.80      49.55    47.30
+                  min       32.10      40.90    40.90
+                  max       46.00      58.00    59.60
+bill_depth_mm     mean      18.35      18.42    14.98
+                  median    18.40      18.45    15.00
+                  min       15.50      16.40    13.10
+                  max       21.50      20.80    17.30
+flipper_length_mm mean     189.95     195.82   217.19
+                  median   190.00     196.00   216.00
+                  min      172.00     178.00   203.00
+                  max      210.00     212.00   231.00
+body_mass_g       mean    3700.66    3733.09  5076.02
+                  median  3700.00    3700.00  5000.00
+                  min     2850.00    2700.00  3950.00
+                  max     4775.00    4800.00  6300.00
+
+5. ПРОВЕРКА ЗНАЧЕНИЙ И КАНДИДАТОВ В ВЫБРОСЫ
+                   non_numeric  infinite  non_positive  iqr_lower  iqr_upper  iqr_outliers
+feature                                                                                   
+bill_length_mm               0         0             0      25.31      62.41             0
+bill_depth_mm                0         0             0      10.95      23.35             0
+flipper_length_mm            0         0             0     155.50     247.50             0
+body_mass_g                  0         0             0    1750.00    6550.00             0
+IQR рассчитан по всему CSV только для исследования. Кандидат в выброс не обязательно является ошибкой.
+
+6. КОРРЕЛЯЦИИ ПИРСОНА
+                   bill_length_mm  bill_depth_mm  flipper_length_mm  body_mass_g
+bill_length_mm              1.000         -0.235              0.656        0.595
+bill_depth_mm              -0.235          1.000             -0.584       -0.472
+flipper_length_mm           0.656         -0.584              1.000        0.871
+body_mass_g                 0.595         -0.472              0.871        1.000
+Корреляции рассчитаны по доступным парам значений. Связь в общей выборке может отражать различия между видами.
+
+7. ВЫВОДЫ ДЛЯ ПРЕПРОЦЕССИНГА
+- Исследованы признаки: bill_length_mm, bill_depth_mm, flipper_length_mm, body_mass_g.
+- Пропусков в них: 8; медианы для заполнения нужно вычислять только на train.
+- Классы представлены разным числом наблюдений: используем стратификацию и смотрим macro F1 вместе с accuracy.
+- Масштабы измерений различаются (мм и г): StandardScaler обучается только на train.
+- Корреляция массы и длины ласта: 0.871. Смотрите также график по видам, чтобы не смешивать межвидовые различия со связью внутри одного вида.
+- Отмечено 0 значений вне IQR-границ (это число значений, а не уникальных строк). При препроцессинге границы рассчитываются заново только по train.
+- Пол, остров и год описаны для понимания выборки; текущая модель использует только четыре измерения тела.
+- EDA не изменяет исходные данные и не обучает модель. Не используйте полную выборку для подбора модели и её параметров.
+
+8. ГДЕ СМОТРЕТЬ ГРАФИКИ
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\bill_dimensions.png: размеры клюва по видам.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\categories.png: виды, острова, пол и год.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\missing_values.png: пропуски.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\distributions.png: распределения четырёх признаков.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\boxplots.png: диапазоны и выбросы по видам.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\correlations.png: корреляции признаков.
+- C:\Users\dasga\OneDrive\Рабочий стол\pmldl\Penguins-\reports\eda\mass_and_flipper.png: масса и длина ласта.
