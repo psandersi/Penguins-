@@ -3,7 +3,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: deployment/api.Dockerfile
+      dockerfile: penguins/deployment/api/Dockerfile
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -16,7 +16,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: deployment/app.Dockerfile
+      dockerfile: penguins/deployment/app/Dockerfile
     environment:
       API_URL: http://api:8000
     ports:

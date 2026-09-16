@@ -1,6 +1,14 @@
 .venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.coverage
+htmlcov/
+*.tmp
+Thumbs.db
+.DS_Store
 models/*.joblib
 data/processed/
 reports/run-*.log

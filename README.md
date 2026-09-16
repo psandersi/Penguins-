@@ -1,13 +1,14 @@
 # Palmer Penguins: автоматический ML-пайплайн
 
+
 Определение вида пингвина (Adelie, Chinstrap или Gentoo) по длине и глубине
 клюва, длине ласта и массе тела. Модель — StandardScaler + LogisticRegression.
-Проект для PMLDL Assignment 1: подготовка данных → обучение и оценка → Docker API и приложение.
+Проект для PMLDL Assignment 1
+
 
 ![Три вида пингвинов](https://raw.githubusercontent.com/allisonhorst/palmerpenguins/main/man/figures/lter_penguins.png)
 
-Artwork by @allison_horst. [Источник и разрешение на учебное использование](https://allisonhorst.github.io/palmerpenguins/articles/art.html).
-Изображение загружается с GitHub, поэтому для его отображения нужен интернет.
+
 
 ## Данные
 
@@ -18,26 +19,82 @@ Artwork by @allison_horst. [Источник и разрешение на уче
 
 ## Файлы
 
+Структура повторяет разделение этапов из `task.md` внутри пакета `penguins`.
+Задание допускает альтернативную логичную иерархию и инструменты.
+Airflow не используется, поэтому `services/airflow` не нужен.
+Исследование выполнено скриптом, поэтому пустая папка `notebooks` не создаётся.
+
+```text
+penguins/
+  datasets/                 # загрузка, исследование, препроцессинг
+  models/train.py           # обучение и оценка
+  deployment/
+    api/server.py           # FastAPI
+    api/Dockerfile
+    app/web.py              # Streamlit
+    app/Dockerfile
+  assets/                   # фотографии и лицензии
+  display.json              # поля формы, диапазоны и названия видов
+  config.py                 # пути и параметры обучения
+  pipeline.py               # последовательность этапов и расписание
+  run_once.py               # один запуск с выводом в терминал
+data/raw/                   # исходные данные
+data/processed/             # train/test и медианы
+models/                     # сохранённая модель
+reports/                    # исследование, метрики и журналы
+tests/
+compose.yaml
+requirements.txt
+```
+
+Читать реализацию удобно в порядке `datasets/preprocess.py` → `models/train.py`
+→ `deployment/api/server.py` → `deployment/app/web.py` → `pipeline.py`.
+Отдельные этапы запускаются напрямую из соответствующих пакетов.
+
+Где менять параметры:
+
+- `config.py`: признаки, seed, доля test, коэффициент IQR, число итераций и интервал.
+- `display.json`: подписи полей, начальные значения, диапазоны и фотографии видов.
+- `deployment/app/web.py`: тексты и расположение элементов интерфейса.
+- `compose.yaml`: порты и настройки контейнеров.
+
+`main()` оставлена в многоэтапных скриптах как короткий сценарий выполнения.
+API запускает Uvicorn, поэтому отдельная `main()` ему не нужна.
+
 | Файл | Назначение |
 |---|---|
-| `penguins/download.py` | Загрузка CSV при его отсутствии |
-| `penguins/explore.py` | Исследование: пропуски, классы, статистика, диаграмма |
-| `penguins/preprocess.py` | Очистка, разбиение train/test, обработка выбросов и пропусков |
-| `penguins/train.py` | Обучение, accuracy и macro F1, сохранение модели |
-| `penguins/api.py` | FastAPI: `/health`, `/predict`, `/docs` |
-| `penguins/app.py` | Streamlit: четыре поля ввода и предсказание через API |
+| `penguins/datasets/download.py` | Загрузка CSV при его отсутствии |
+| `penguins/datasets/explore.py` | Исследование: пропуски, классы, статистика, диаграмма |
+| `penguins/datasets/preprocess.py` | Очистка, разбиение train/test, обработка выбросов и пропусков |
+| `penguins/models/train.py` | Обучение, accuracy и macro F1, сохранение модели |
+| `penguins/deployment/api/server.py` | FastAPI: `/health`, `/predict`, `/docs` |
+| `penguins/deployment/app/web.py` | Streamlit: четыре поля ввода и предсказание через API |
 | `penguins/pipeline.py` | Запуск всех этапов и расписание |
 | `penguins/run_once.py` | Выполнение одного прогона с выводом в журнал |
 | `penguins/config.py` | Пути, признаки, random seed |
-| `deployment/*.Dockerfile` | Отдельные образы API и приложения |
+| `penguins/deployment/{api,app}/Dockerfile` | Отдельные образы API и приложения |
 | `compose.yaml` | Контейнеры, сеть и проверки готовности |
 | `tests/test_pipeline.py` | Проверки артефактов и API |
 
 ## Запуск
 
+Git Bash на Windows, из корня проекта:
+
+```bash
+source .venv/Scripts/activate
+python -m penguins.run_once
+```
+
+Это разовый прогон с видимым выводом. Для автоматизации:
+
+```bash
+python -m penguins.pipeline --schedule
+```
+
+В Linux/WSL активируйте окружение через `source .venv/bin/activate`.
+
 Нужны Python 3.12 и запущенный Docker Engine (на Windows — Docker Desktop
-с Linux-контейнерами), свободные порты 8000 и 8501. Команды выполняются
-из папки `assign1` (или корня репозитория, если опубликовано её содержимое).
+с Linux-контейнерами), свободные порты 8000 и 8501.
 
 ```powershell
 python -m venv .venv
@@ -81,10 +138,10 @@ docker compose down
 ## Исследование и отдельные этапы
 
 ```powershell
-.venv\Scripts\python -m penguins.download
-.venv\Scripts\python -m penguins.explore
-.venv\Scripts\python -m penguins.preprocess
-.venv\Scripts\python -m penguins.train
+.venv\Scripts\python -m penguins.datasets.download
+.venv\Scripts\python -m penguins.datasets.explore
+.venv\Scripts\python -m penguins.datasets.preprocess
+.venv\Scripts\python -m penguins.models.train
 .venv\Scripts\python -m unittest discover -s tests -v
 ```
 
@@ -131,10 +188,21 @@ POST http://localhost:8000/predict с JSON:
 
 Ответ содержит `species` и `probabilities` для трёх классов.
 
-## Сдача
+## Известные ограничения
 
-Опубликуйте содержимое проекта в публичном GitHub-репозитории и сдайте ссылку.
-Модель и обработанные данные исключены из Git: они генерируются пайплайном.
-На защите покажите два последовательных запуска по расписанию, журналы
-с метриками, два работающих контейнера (`docker compose ps`) и предсказание
-через веб-приложение. Все три этапа и автоматизация обязательны.
+Они существовали до рефакторинга и не менялись вместе со структурой кода:
+
+- `Ctrl+C` пишет `Scheduler stopped` даже для разового запуска и не возвращает
+  специальный код отмены.
+- Запускайте один планировщик: между независимыми процессами нет блокировки.
+- Диапазоны в `display.json` заданы для текущего CSV, а не вычисляются при обучении.
+- UI допускает значения от 0.1, API — любые положительные конечные значения.
+  Верхнего жёсткого ограничения нет; API возвращает предупреждения, UI их скрывает.
+
+## Требования задания
+
+Все три этапа запускаются последовательно, включая сборку и запуск двух
+Docker-контейнеров. Расписание по умолчанию — 5 минут. Palmer Penguins не входит
+в запрещённые датасеты. Метрики записываются в JSON и журналы; альтернативы
+MLflow, DVC и Airflow разрешены условием. Для сдачи нужен публичный GitHub-репозиторий
+и демонстрация полного автоматического пайплайна с предсказанием через приложение.

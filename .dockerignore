@@ -5,3 +5,8 @@ data
 reports
 tests
 docs
+.pytest_cache
+.ruff_cache
+.ipynb_checkpoints
+*.pyc
+*.tmp
